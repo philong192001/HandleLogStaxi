@@ -3,7 +3,7 @@
 public class LogRequest
 {
     //Date check folder theo ngày tháng năm dưới local
-    public string Date { get; set; }
+    public string? Date { get; set; }
 
     //vehicalPlate check first prefix file log theo biển kiểm soát
     public string? VehicalPlate { get; set; }

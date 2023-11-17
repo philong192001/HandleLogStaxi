@@ -1,4 +1,5 @@
-﻿using HandleLog.Commons.Utils;
+﻿using HandleLog.Commons.Enums;
+using HandleLog.Commons.Utils;
 using HandleLog.Contexts;
 using HandleLog.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ public class LoggingController : ControllerBase
     {
         try
         {
-            var getConfigFTP = _dbContext.Companies.Where(x => x.Id.Equals(logRequest.CompanyId)).Select(x => new { x.IPServerFTP, x.PortFTP, x.UserNameFTP, x.PasswordFTP, x.DirectoryFTP, x.DirectoryLog }).FirstOrDefault();
+            var getConfigFTP = _dbContext.Companies.Where(x => x.CompanyId.Equals(logRequest.CompanyId)).Select(x => new { x.IPServerFTP, x.PortFTP, x.UserNameFTP, x.PasswordFTP, x.DirectoryFTP, x.DirectoryLog }).FirstOrDefault();
             string[] directories = Directory.GetDirectories(_appSetting.PathRoot, $"{getConfigFTP.DirectoryLog}*");
             string msgWarnFile = "";
             string msgWarnFTP = "";
@@ -44,7 +45,7 @@ public class LoggingController : ControllerBase
                 string folderPathChild = Path.Combine(directory, logRequest.Date);
                 var nameFileOutPut = $"TotalLog_{logRequest.VehicalPlate}{_appSetting.NameFileLogMerge}";
 
-                // Create the output file path based on the subfolder name
+                // Create the output file path based on the subfolder name 
                 string outputFilePath = Path.Combine(folderPathChild, nameFileOutPut);
 
                 // Merge files in the subfolder
@@ -66,11 +67,19 @@ public class LoggingController : ControllerBase
                     msgWarnFTP += resAction;
                 }
             }
-            return Ok(msgWarnFile + msgWarnFTP);
+            return Ok( new ResponseAppDTO<string>
+            {
+                Data = msgWarnFile + msgWarnFTP
+            });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new ResponseAppDTO<string>
+            {
+                Message = ErrorCodeEnum.Error.GetDescription(),
+                ErrorCode = ErrorCodeEnum.Error,
+                Data = ex.Message
+            });
         }
     }
 }
