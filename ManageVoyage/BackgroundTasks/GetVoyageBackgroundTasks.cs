@@ -89,13 +89,13 @@ public class GetVoyageBackgroundTasks : BackgroundService
         timer = new Timer(o => {
 
             HttpClient client = _factory.CreateClient();
-            GetToken(client);
+            token = Utils.GetToken(client, _appSetting, _jsonSerializerOptions);
             var voyageData = GetVoyage(client, token);
 
             //Khi thiếu token hoặc token hết hạn
             if(voyageData == "Fail")
             {
-               GetToken(client);
+                token = Utils.GetToken(client,_appSetting, _jsonSerializerOptions);
             }
 
             nextDelay = GenerateRandomDelay();
@@ -110,20 +110,5 @@ public class GetVoyageBackgroundTasks : BackgroundService
         return Task.CompletedTask;
     }
 
-    private void GetToken(HttpClient client)
-    {
-        var userLogin = new UserCaro()
-        {
-            Email = _appSetting.CaroAccount.Email,
-            Password = _appSetting.CaroAccount.Password
-        };
-
-        // Chuyển đối tượng data thành chuỗi JSON
-        var jsonData = JsonSerializer.Serialize(userLogin);
-        var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
-        var response = client.PostAsync($"{_appSetting.CaroAccount.Url}{Constants.UrlGetToken}", content);
-        var responseBody = response.Result.Content.ReadAsStringAsync();
-        var trackingRouteResponse = JsonSerializer.Deserialize<UserCaroRes>(responseBody.Result, _jsonSerializerOptions);
-        token = trackingRouteResponse.Token;
-    }
+   
 }

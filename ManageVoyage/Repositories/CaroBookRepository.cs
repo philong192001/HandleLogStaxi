@@ -1,6 +1,5 @@
 ﻿using ManageVoyage.Data;
 using ManageVoyage.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace ManageVoyage.Repositories;
 
@@ -24,8 +23,9 @@ public class CaroBookRepository : ICaroBookRepository
                 NameCustomer = l.Customer.Name,
                 PhoneCustomer = l.Customer.Phone,
                 Partner = l.Partner_Uid,
-                Payment = l.Total_Price,
+                TotalCash = l.Total_Price,
                 SourceAddress = l.Source.Address,
+                ReturnAddress = l.Destinations[0].Address,
                 SourceLat = l.Source.Latitude,
                 SourceLong = l.Source.Longitude,
                 SourceApp = l.Customer_Source_Display,
@@ -36,7 +36,7 @@ public class CaroBookRepository : ICaroBookRepository
             if (!_context.CaroBookings.Any(existingCarBook => existingCarBook.NameCustomer == carBook.NameCustomer && existingCarBook.PhoneCustomer == carBook.PhoneCustomer
             && existingCarBook.CreatedAt == carBook.CreatedAt && existingCarBook.SourceAddress == carBook.SourceAddress && existingCarBook.SourceLat == carBook.SourceLat
             && existingCarBook.SourceLong == carBook.SourceLong && existingCarBook.Status == carBook.Status && existingCarBook.CarType == carBook.CarType
-            && existingCarBook.SourceApp == carBook.SourceApp && existingCarBook.Payment == carBook.Payment && existingCarBook.Partner == carBook.Partner
+            && existingCarBook.SourceApp == carBook.SourceApp && existingCarBook.TotalCash == carBook.TotalCash && existingCarBook.Partner == carBook.Partner
             ))
             {
                 _context.CaroBookings.Add(carBook);
