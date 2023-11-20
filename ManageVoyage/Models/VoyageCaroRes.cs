@@ -10,7 +10,8 @@ public class Data
 {
     public string Status { get; set; }
     public Customer Customer { get; set; }
-    public Source Source { get; set; }
+    public AddressFromTo Source { get; set; }
+    public List<AddressFromTo> Destinations { get; set; }
     public decimal Created_At { get; set; }
     public string Car_Type { get; set; }
     public decimal Total_Price { get; set; }
@@ -26,9 +27,9 @@ public class Customer
     public string Name { get; set; }
 }
 
-public class Source
+public class AddressFromTo
 {
-    public string  Address { get; set; }
-    public float  Longitude { get; set; }
-    public float  Latitude { get; set; }
+    public string Address { get; set; }
+    public double Longitude { get; set; }
+    public double Latitude { get; set; }
 }
