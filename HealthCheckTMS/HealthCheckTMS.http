@@ -1,6 +1,0 @@
-@HealthCheckTMS_HostAddress = http://localhost:5202
-
-GET {{HealthCheckTMS_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

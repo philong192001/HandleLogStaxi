@@ -4,5 +4,5 @@ namespace ManageVoyage.Repositories;
 
 public interface ICaroBookRepository
 {
-    public string SaveRange(VoyageCaroRes res);
+    public void SaveRange(VoyageCaroRes res);
 }

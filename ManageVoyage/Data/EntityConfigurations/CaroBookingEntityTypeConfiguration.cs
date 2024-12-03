@@ -9,19 +9,19 @@ public class CaroBookingEntityTypeConfiguration : IEntityTypeConfiguration<CaroB
     public void Configure(EntityTypeBuilder<CaroBooking> entityTypeBuilder)
     {
         entityTypeBuilder.ToTable("CaroBooking");
-        entityTypeBuilder.Property(p => p.Id).HasColumnType("INT").UseIdentityColumn(); ;
         entityTypeBuilder.HasKey(p => p.Id);
+        entityTypeBuilder.Property(p => p.Id).HasColumnType("INT");
         entityTypeBuilder.Property(p => p.CreatedAt).HasColumnType("DECIMAL(18,0)");
-        entityTypeBuilder.Property(p => p.SourceAddress).HasColumnType("NVARCHAR(500)").UseCollation("Latin1_General_CI_AI"); ;
-        entityTypeBuilder.Property(p => p.ReturnAddress).HasColumnType("NVARCHAR(500)").UseCollation("Latin1_General_CI_AI"); ;
+        entityTypeBuilder.Property(p => p.SourceAddress).HasColumnType("NVARCHAR(500)");
+        entityTypeBuilder.Property(p => p.ReturnAddress).HasColumnType("NVARCHAR(500)");
         entityTypeBuilder.Property(p => p.SourceLat).HasColumnType("FLOAT");
         entityTypeBuilder.Property(p => p.SourceLong).HasColumnType("FLOAT");
-        entityTypeBuilder.Property(p => p.Status).HasColumnType("NVARCHAR(50)").UseCollation("Latin1_General_CI_AI"); ;
-        entityTypeBuilder.Property(p => p.SourceApp).HasColumnType("NVARCHAR(50)").UseCollation("Latin1_General_CI_AI"); ;
-        entityTypeBuilder.Property(p => p.Partner).HasColumnType("NVARCHAR(50)").UseCollation("Latin1_General_CI_AI"); ;
-        entityTypeBuilder.Property(p => p.CarType).HasColumnType("NVARCHAR(50)").UseCollation("Latin1_General_CI_AI"); ;
+        entityTypeBuilder.Property(p => p.Status).HasColumnType("NVARCHAR(50)");
+        entityTypeBuilder.Property(p => p.SourceApp).HasColumnType("NVARCHAR(50)");
+        entityTypeBuilder.Property(p => p.Partner).HasColumnType("NVARCHAR(50)");
+        entityTypeBuilder.Property(p => p.CarType).HasColumnType("NVARCHAR(50)");
         entityTypeBuilder.Property(p => p.TotalCash).HasColumnType("DECIMAL(18,0)");
         entityTypeBuilder.Property(p => p.PhoneCustomer).HasColumnType("NVARCHAR(20)");
-        entityTypeBuilder.Property(p => p.NameCustomer).HasColumnType("NVARCHAR(50)").UseCollation("Latin1_General_CI_AI"); ;
+        entityTypeBuilder.Property(p => p.NameCustomer).HasColumnType("NVARCHAR(50)");
     }
 }

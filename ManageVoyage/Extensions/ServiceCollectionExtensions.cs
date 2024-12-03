@@ -21,7 +21,7 @@ public static class ServiceCollectionExtensions
             options.EnableRetryOnFailure();
         }));
         services.AddHostedService<GetVoyageBackgroundTasks>();
-        services.AddLogger(configuration, builder);
+        services.AddLogger(configuration,builder);
         return services;
     }
 
@@ -32,19 +32,6 @@ public static class ServiceCollectionExtensions
            .Enrich.FromLogContext()
            .CreateLogger();
         builder.Logging.AddSerilog(logger);
-
-        services.AddLogging(logging =>
-        {
-            logging.ClearProviders();
-            logging.AddConsole(options =>
-            {
-                // Chỉ hiển thị log từ mức warning trở lên
-                options.LogToStandardErrorThreshold = LogLevel.Warning;
-            });
-            logging.AddDebug();
-            // Tắt log của info từ Microsoft.EntityFrameworkCore.Database.Command
-            logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
-        });
 
         return services;
     }

@@ -1,6 +1,4 @@
-﻿using LoggerELK.Models;
-
-namespace HandleLog.Models;
+﻿namespace HandleLog.Models;
 
 public class AppSetting
 {
@@ -8,7 +6,6 @@ public class AppSetting
     public string? PathRoot { get; set; }
     public string? NameFileLogMerge { get; set; }
     public string? ConnectionString { get; set; }
-    public ELKSettings ELKSettings { get; set; }
 
     public static AppSetting MapValue(IConfiguration configuration)
     {
@@ -17,8 +14,7 @@ public class AppSetting
             AttrLog = configuration[nameof(AttrLog)],
             PathRoot = configuration[nameof(PathRoot)],
             NameFileLogMerge = configuration[nameof(NameFileLogMerge)],
-            ConnectionString = configuration[nameof(ConnectionString)],
-            ELKSettings = configuration.GetSection(nameof(ELKSettings)).Get<ELKSettings>()
+            ConnectionString = configuration[nameof(ConnectionString)]
         };
         return setting;
     }
