@@ -6,33 +6,44 @@ public class FileUtil
     {
         try
         {
-            // Get all files in the folder with the specified pattern
-            string[] files = Directory.GetFiles(folderPath, $"{controlPlate}_*.txt");
+            // Tìm tất cả các file trong thư mục với tên có liên quan (không phân biệt hoa/thường)
+            //string[] files = Directory.GetFiles(folderPath, $"{controlPlate}_*.txt");
+            string[] files = Directory.GetFiles(folderPath)
+                                 .Where(file => Path.GetFileName(file)
+                                     .StartsWith(controlPlate, StringComparison.OrdinalIgnoreCase) && file.EndsWith(".txt"))
+                                 .ToArray();
 
-            // Create a StreamWriter to write the merged content to the output file
+            // Kiểm tra nếu không có file nào khớp
+            if (files.Length == 0)
+            {
+                return $"No files found with prefix {controlPlate}_* in folder : {folderPath} ---";
+            }
+
+            // Tạo StreamWriter để ghi nội dung merge vào file đầu ra
             using (StreamWriter writer = new StreamWriter(outputFilePath))
             {
                 foreach (string file in files)
                 {
-                    // Read all lines from the log file
+                    // Đọc tất cả các dòng từ file log
                     string[] lines = File.ReadAllLines(file);
 
                     foreach (string line in lines)
                     {
-                        // Check if the log line contains the specified log level
+                        // Đọc tất cả các dòng từ file log
                         if (line.Contains(logInfo))
                         {
-                            // Write the log line to the filtered log file
+                            // Đọc tất cả các dòng từ file log
                             writer.WriteLine(line);
                         }
                     }
                 }
             }
-            return $"Merge file prefix {controlPlate}_* done in folder : {folderPath}   ";
+            return $"Merge file prefix {controlPlate}_* done in folder : {folderPath} ---";
         }
         catch (Exception ex)
         {
-            return ex.Message;
+            return null;
+           //ex.Message;
         }
-    }
 }
+    }

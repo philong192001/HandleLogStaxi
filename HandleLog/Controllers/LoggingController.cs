@@ -45,7 +45,7 @@ public class LoggingController : ControllerBase
                 string folderPathChild = Path.Combine(directory, logRequest.Date);
                 var nameFileOutPut = $"TotalLog_{logRequest.VehicalPlate}{_appSetting.NameFileLogMerge}";
 
-                // Create the output file path based on the subfolder name 
+                // Create the output file path based on the subfolder name
                 string outputFilePath = Path.Combine(folderPathChild, nameFileOutPut);
 
                 // Merge files in the subfolder
@@ -57,19 +57,19 @@ public class LoggingController : ControllerBase
                 if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patterniOS.ToLower()).Replace("\\*", ".*")))
                 {
                     string remoteFileNameiOS = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/IOS_{nameFileOutPut}";
-                    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameiOS, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP);
+                    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameiOS, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
                     msgWarnFTP += resAction;
                 }
                 else if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patternAdr.ToLower()).Replace("\\*", ".*")))
                 {
                     string remoteFileNameAdr = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/Android_{nameFileOutPut}";
-                    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameAdr, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP);
-                    msgWarnFTP += resAction;
+                    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameAdr, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
+                    msgWarnFTP += resAction + "-";
                 }
             }
-            return Ok( new ResponseAppDTO<string>
+            return Ok(new ResponseAppDTO<string>
             {
-                Data = msgWarnFile + msgWarnFTP
+                Data = "MERGE :" + msgWarnFile + "UPLOAD : " + msgWarnFTP
             });
         }
         catch (Exception ex)

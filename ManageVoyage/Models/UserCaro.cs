@@ -11,4 +11,3 @@ public class UserCaroRes
 {
     public string Token { get; set; }
 }
-

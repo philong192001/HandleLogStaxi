@@ -3,7 +3,6 @@ using ManageVoyage.Models;
 using ManageVoyage.Repositories;
 using ManageVoyage.Settings;
 using System.Net;
-using System.Text;
 using System.Text.Json;
 
 namespace ManageVoyage.BackgroundTasks;
@@ -22,8 +21,8 @@ public class GetVoyageBackgroundTasks : BackgroundService
     public GetVoyageBackgroundTasks(ILogger<GetVoyageBackgroundTasks> logger, IHttpClientFactory factory, AppSetting appSetting, IServiceScopeFactory serviceScopeFactory)
     {
         _appSetting = appSetting;
-        _logger = logger;  
-        _factory = factory; 
+        _logger = logger;
+        _factory = factory;
         _jsonSerializerOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
@@ -44,7 +43,6 @@ public class GetVoyageBackgroundTasks : BackgroundService
         {
             try
             {
-
                 // Lấy thời gian hiện tại
                 DateTime currentTime = DateTime.UtcNow;
 
@@ -63,11 +61,17 @@ public class GetVoyageBackgroundTasks : BackgroundService
                 var response = httpClient.GetAsync(url).Result;
                 string jsonData = response.Content.ReadAsStringAsync().Result;
                 var data = JsonSerializer.Deserialize<VoyageCaroRes>(jsonData, _jsonSerializerOptions);
-                
-                if(data == null || response.StatusCode == HttpStatusCode.Unauthorized)
+
+                if (data == null || response.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     return "Fail";
                 }
+
+                foreach (var item in data.Data)
+                {
+                    item.Customer.Phone = item.Customer.Phone.Replace("+84", "0");
+                }
+
                 var caroBookRepository = scope.ServiceProvider.GetRequiredService<ICaroBookRepository>();
                 caroBookRepository.SaveRange(data);
 
@@ -78,7 +82,6 @@ public class GetVoyageBackgroundTasks : BackgroundService
                 _logger.LogError(ex.Message);
                 return "Fail";
             }
-           
         }
     }
 
@@ -86,16 +89,16 @@ public class GetVoyageBackgroundTasks : BackgroundService
     {
         nextDelay = GenerateRandomDelay();
 
-        timer = new Timer(o => {
-
+        timer = new Timer(o =>
+        {
             HttpClient client = _factory.CreateClient();
             token = Utils.GetToken(client, _appSetting, _jsonSerializerOptions);
             var voyageData = GetVoyage(client, token);
 
             //Khi thiếu token hoặc token hết hạn
-            if(voyageData == "Fail")
+            if (voyageData == "Fail")
             {
-                token = Utils.GetToken(client,_appSetting, _jsonSerializerOptions);
+                token = Utils.GetToken(client, _appSetting, _jsonSerializerOptions);
             }
 
             nextDelay = GenerateRandomDelay();
@@ -109,6 +112,4 @@ public class GetVoyageBackgroundTasks : BackgroundService
 
         return Task.CompletedTask;
     }
-
-   
 }

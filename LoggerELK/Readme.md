@@ -1,0 +1,1 @@
+﻿SendLog , SendLogBatch, Add, SaveChange
