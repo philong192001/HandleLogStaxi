@@ -8,7 +8,11 @@ public class AppSetting
     public string? PathRoot { get; set; }
     public string? NameFileLogMerge { get; set; }
     public string? ConnectionString { get; set; }
-    public ELKSettings ELKSettings { get; set; }
+    /// <summary>
+    /// Link mặc định service Log chung
+    /// </summary>
+    public string? CurrentLink { get; set; }
+    public ELKSettings? ELKSettings { get; set; }
 
     public static AppSetting MapValue(IConfiguration configuration)
     {
@@ -18,6 +22,7 @@ public class AppSetting
             PathRoot = configuration[nameof(PathRoot)],
             NameFileLogMerge = configuration[nameof(NameFileLogMerge)],
             ConnectionString = configuration[nameof(ConnectionString)],
+            CurrentLink = configuration[nameof(CurrentLink)],
             ELKSettings = configuration.GetSection(nameof(ELKSettings)).Get<ELKSettings>()
         };
         return setting;

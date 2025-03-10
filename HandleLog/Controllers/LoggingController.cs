@@ -3,6 +3,7 @@ using HandleLog.Commons.Utils;
 using HandleLog.Contexts;
 using HandleLog.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 #nullable disable
@@ -28,59 +29,73 @@ public class LoggingController : ControllerBase
         try
         {
             var response = new ResponseAppDTO<List<string>>();
+            // Lấy cấu hình của công ty
             var getConfigFTP = _dbContext.Companies.Where(x => x.CompanyId.Equals(logRequest.CompanyId)).Select(x => new { x.IPServerFTP, x.PortFTP, x.UserNameFTP, x.PasswordFTP, x.DirectoryFTP, x.DirectoryLog }).FirstOrDefault();
-            string[] directories = Directory.GetDirectories(_appSetting.PathRoot, $"{getConfigFTP.DirectoryLog}*");
-            string msgWarnFile = "";
-            string msgWarnFTP = "";
-
-            //tách ngày tháng năm để tạo folder
-            string[] parts = logRequest.Date.Split('_');
-            string folderDay = parts[0];
-            string folderMonth = parts[1];
-            var folderYear = parts[2];
-
-            var outputFilePaths = new List<string>();
-            // Loop through each directory
-            foreach (string directory in directories)
+            if (getConfigFTP == null)
             {
-                // Combine the directory path and subfolder name
-                string folderPathChild = Path.Combine(directory, logRequest.Date);
-                var nameFileOutPut = $"TotalLog_{logRequest.VehicalPlate}{_appSetting.NameFileLogMerge}";
-
-                // Create the output file path based on the subfolder name
-                string outputFilePath = Path.Combine(folderPathChild, nameFileOutPut);
-
-                // Merge files in the subfolder
-                var msgExecuteFile = FileUtil.MergeFilesInFolder(folderPathChild, outputFilePath, logRequest.VehicalPlate, _appSetting.AttrLog);
-                msgWarnFile += msgExecuteFile;
-                //string patternAdr = $"{_appSetting.PathRoot}{getConfigFTP.DirectoryLog}*_Android";
-                //string patterniOS = $"{_appSetting.PathRoot}{getConfigFTP.DirectoryLog}*_iOS";
-
-                //Trả theo currentLink không upload FTP nữa
-                //check type folder and change name remote file send by FTP
-                //if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patterniOS.ToLower()).Replace("\\*", ".*")))
-                //{
-                //    string remoteFileNameiOS = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/IOS_{nameFileOutPut}";
-                //    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameiOS, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
-                //    msgWarnFTP += resAction;
-                //}
-                //else if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patternAdr.ToLower()).Replace("\\*", ".*")))
-                //{
-                //    string remoteFileNameAdr = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/Android_{nameFileOutPut}";
-                //    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameAdr, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
-                //    msgWarnFTP += resAction + "-";
-                //}
-
-                // Kiểm tra xem tệp có tồn tại không trước khi thêm vào danh sách
-                if (System.IO.File.Exists(outputFilePath))
+                return BadRequest(new ResponseAppDTO<string>
                 {
-                    outputFilePaths.Add(outputFilePath);
+                    Message = "Không tìm thấy cấu hình cho công ty",
+                    ErrorCode = ErrorCodeEnum.Error
+                });
+            }
+            // Lấy danh sách thư mục có chứa log
+            string[] parentDirectories = Directory.GetDirectories(_appSetting.PathRoot, $"{getConfigFTP.DirectoryLog}*");
+            if (parentDirectories.Length == 0)
+            {
+                return Ok(new ResponseAppDTO<List<string>> { Message = "Không có thư mục log tồn tại" });
+            }
+
+            // Chuyển đổi fromDate & toDate từ string sang DateTime để so sánh chính xác hơn
+            if (!DateTime.TryParseExact(logRequest.FromDate, "dd_MM_yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fromDate) ||
+                !DateTime.TryParseExact(logRequest.ToDate, "dd_MM_yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime toDate))
+            {
+                return BadRequest(new ResponseAppDTO<string>
+                {
+                    Message = "Định dạng fromDate hoặc toDate không hợp lệ. Định dạng đúng: dd_MM_yyyy",
+                    ErrorCode = ErrorCodeEnum.Error
+                });
+            }
+            var outputFilePaths = new List<string>();
+
+            // Duyệt qua từng thư mục cấp 1
+            foreach (string parentDir in parentDirectories)
+            {
+                // Lấy danh sách thư mục con (theo ngày)
+                string[] subDirectories = Directory.GetDirectories(parentDir);
+
+                foreach (string subDir in subDirectories)
+                {
+                    string folderName = Path.GetFileName(subDir); // "14_03_2025"
+
+                    // Kiểm tra nếu thư mục có dạng dd_MM_yyyy và nằm trong khoảng thời gian yêu cầu
+                    if (!DateTime.TryParseExact(folderName, "dd_MM_yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime folderDate) ||
+                        folderDate < fromDate || folderDate > toDate)
+                    {
+                        continue; // Bỏ qua nếu không hợp lệ
+                    }
+
+                    // Đường dẫn file log đã merge
+                    string nameFileOutPut = $"TotalLog_{logRequest.VehicalPlate}{_appSetting.NameFileLogMerge}";
+                    string outputFilePath = Path.Combine(subDir, nameFileOutPut).Replace("\\", "/");
+
+                    // Merge tất cả file log theo biển số xe trong thư mục con
+                    FileUtil.MergeFilesInFolder(subDir, outputFilePath, logRequest.VehicalPlate, _appSetting.AttrLog);
+
+                    // Xác định platform (_Android hoặc _iOS)
+                    string platformSuffix = parentDir.ToLower().Contains("_ios") ? "_iOS" :
+                                            parentDir.ToLower().Contains("_android") ? "_Android" : "";
+
+                    if (!string.IsNullOrEmpty(platformSuffix) && System.IO.File.Exists(outputFilePath))
+                    {
+                        string fileUrl = $"{_appSetting.CurrentLink}{getConfigFTP.DirectoryLog}{platformSuffix}/{folderName}/{nameFileOutPut}";
+                        outputFilePaths.Add(fileUrl);
+                    }
                 }
             }
-            if(outputFilePaths.Count < 0)
+            if (outputFilePaths.Count == 0)
             {
-                response.Message = "Không có file log tồn tại";
-                return Ok(response);
+                response.Message = "Không có file log tồn tại trong khoảng thời gian yêu cầu";
             }
             else
             {
