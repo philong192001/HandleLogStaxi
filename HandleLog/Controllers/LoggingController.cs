@@ -27,6 +27,7 @@ public class LoggingController : ControllerBase
     {
         try
         {
+            var response = new ResponseAppDTO<List<string>>();
             var getConfigFTP = _dbContext.Companies.Where(x => x.CompanyId.Equals(logRequest.CompanyId)).Select(x => new { x.IPServerFTP, x.PortFTP, x.UserNameFTP, x.PasswordFTP, x.DirectoryFTP, x.DirectoryLog }).FirstOrDefault();
             string[] directories = Directory.GetDirectories(_appSetting.PathRoot, $"{getConfigFTP.DirectoryLog}*");
             string msgWarnFile = "";
@@ -38,6 +39,7 @@ public class LoggingController : ControllerBase
             string folderMonth = parts[1];
             var folderYear = parts[2];
 
+            var outputFilePaths = new List<string>();
             // Loop through each directory
             foreach (string directory in directories)
             {
@@ -51,26 +53,40 @@ public class LoggingController : ControllerBase
                 // Merge files in the subfolder
                 var msgExecuteFile = FileUtil.MergeFilesInFolder(folderPathChild, outputFilePath, logRequest.VehicalPlate, _appSetting.AttrLog);
                 msgWarnFile += msgExecuteFile;
-                string patternAdr = $"{_appSetting.PathRoot}{getConfigFTP.DirectoryLog}*_Android";
-                string patterniOS = $"{_appSetting.PathRoot}{getConfigFTP.DirectoryLog}*_iOS";
+                //string patternAdr = $"{_appSetting.PathRoot}{getConfigFTP.DirectoryLog}*_Android";
+                //string patterniOS = $"{_appSetting.PathRoot}{getConfigFTP.DirectoryLog}*_iOS";
+
+                //Trả theo currentLink không upload FTP nữa
                 //check type folder and change name remote file send by FTP
-                if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patterniOS.ToLower()).Replace("\\*", ".*")))
+                //if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patterniOS.ToLower()).Replace("\\*", ".*")))
+                //{
+                //    string remoteFileNameiOS = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/IOS_{nameFileOutPut}";
+                //    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameiOS, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
+                //    msgWarnFTP += resAction;
+                //}
+                //else if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patternAdr.ToLower()).Replace("\\*", ".*")))
+                //{
+                //    string remoteFileNameAdr = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/Android_{nameFileOutPut}";
+                //    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameAdr, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
+                //    msgWarnFTP += resAction + "-";
+                //}
+
+                // Kiểm tra xem tệp có tồn tại không trước khi thêm vào danh sách
+                if (System.IO.File.Exists(outputFilePath))
                 {
-                    string remoteFileNameiOS = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/IOS_{nameFileOutPut}";
-                    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameiOS, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
-                    msgWarnFTP += resAction;
-                }
-                else if (Regex.IsMatch(directory.ToLower(), Regex.Escape(patternAdr.ToLower()).Replace("\\*", ".*")))
-                {
-                    string remoteFileNameAdr = $"{getConfigFTP.DirectoryFTP}/{folderYear}/{folderMonth}/{folderDay}/Android_{nameFileOutPut}";
-                    var resAction = FTPConnect.UploadFileToFtp(outputFilePath, getConfigFTP.IPServerFTP, getConfigFTP.PortFTP, getConfigFTP.UserNameFTP, getConfigFTP.PasswordFTP, remoteFileNameAdr, folderDay, folderMonth, folderYear, getConfigFTP.DirectoryFTP, _appSetting.ELKSettings);
-                    msgWarnFTP += resAction + "-";
+                    outputFilePaths.Add(outputFilePath);
                 }
             }
-            return Ok(new ResponseAppDTO<string>
+            if(outputFilePaths.Count < 0)
             {
-                Data = "MERGE :" + msgWarnFile + "UPLOAD : " + msgWarnFTP
-            });
+                response.Message = "Không có file log tồn tại";
+                return Ok(response);
+            }
+            else
+            {
+                response.Data = outputFilePaths;
+            }
+            return Ok(response);
         }
         catch (Exception ex)
         {
