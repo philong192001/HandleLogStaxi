@@ -75,21 +75,53 @@ public class LoggingController : ControllerBase
                         continue; // Bỏ qua nếu không hợp lệ
                     }
 
-                    // Đường dẫn file log đã merge
-                    string nameFileOutPut = $"TotalLog_{logRequest.VehicalPlate}{_appSetting.NameFileLogMerge}";
-                    string outputFilePath = Path.Combine(subDir, nameFileOutPut).Replace("\\", "/");
-
-                    // Merge tất cả file log theo biển số xe trong thư mục con
-                    FileUtil.MergeFilesInFolder(subDir, outputFilePath, logRequest.VehicalPlate, _appSetting.AttrLog);
-
-                    // Xác định platform (_Android hoặc _iOS)
-                    string platformSuffix = parentDir.ToLower().Contains("_ios") ? "_iOS" :
-                                            parentDir.ToLower().Contains("_android") ? "_Android" : "";
-
-                    if (!string.IsNullOrEmpty(platformSuffix) && System.IO.File.Exists(outputFilePath))
+                    if (logRequest.TypeLog == TypeLog.Driver)
                     {
-                        string fileUrl = $"{_appSetting.CurrentLink}{getConfigFTP.DirectoryLog}{platformSuffix}/{folderName}/{nameFileOutPut}";
-                        outputFilePaths.Add(fileUrl);
+                        // Đường dẫn file log đã merge
+                        string nameFileOutPut = $"TotalLog_{logRequest.VehiclePlate}{_appSetting.NameFileLogMerge}";
+                        string outputFilePath = Path.Combine(subDir, nameFileOutPut).Replace("\\", "/");
+
+                        // Merge tất cả file log theo biển số xe trong thư mục con
+                        FileUtil.MergeFilesInFolder(subDir, outputFilePath, logRequest.VehiclePlate, _appSetting.AttrLog);
+
+                        //// Xác định platform (_Android hoặc _iOS)
+                        //string platformSuffix = parentDir.ToLower().Contains("_ios") ? "_iOS" :
+                        //                        parentDir.ToLower().Contains("_android") ? "_Android" : "";
+
+                        var directoryName = Directory.CreateDirectory(parentDir).Name;
+                        if (System.IO.File.Exists(outputFilePath))
+                        {
+                            string fileUrl = $"{_appSetting.CurrentLink}{directoryName}/{folderName}/{nameFileOutPut}";
+                            outputFilePaths.Add(fileUrl);
+                        }
+                    }
+
+                    if (logRequest.TypeLog == TypeLog.CurrentApp)
+                    {
+                        // Định dạng tiền tố file log cần lấy
+                        string prefix = $"{logRequest.VehiclePlate}_";
+
+                        // Lấy tất cả file trong thư mục con (subDir)
+                        var logFiles = Directory.EnumerateFiles(subDir)
+                                                .Where(file => Path.GetFileName(file).StartsWith(prefix) &&
+                                                               file.Contains("_CurrentApp"))
+                                                 .OrderByDescending(file => System.IO.File.GetLastWriteTime(file)) // Sắp xếp theo thời gian chỉnh sửa gần nhất
+
+                                                .ToList();
+                        // Lấy file mới nhất nếu có
+                        if (logFiles.Any())
+                        {
+                            string latestFile = logFiles.First(); // Lấy file mới nhất
+                            var directoryName = Directory.CreateDirectory(parentDir).Name;
+                            // Nếu có platform và file tồn tại, tạo đường dẫn URL
+                            if (System.IO.File.Exists(latestFile))
+                            {
+                                string fileName = Path.GetFileName(latestFile);
+                                string fileUrl = $"{_appSetting.CurrentLink}{directoryName}/{folderName}/{fileName}";
+                                outputFilePaths.Add(fileUrl);
+                            }
+
+                        }
                     }
                 }
             }
