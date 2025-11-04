@@ -57,6 +57,7 @@ public class LoggingController : ControllerBase
                 });
             }
             var outputFilePaths = new List<string>();
+            string vehiclePlateLower = logRequest.VehiclePlate.ToLower(); // chuẩn hóa biển số xe về chữ thường để so sánh
 
             // Duyệt qua từng thư mục cấp 1
             foreach (string parentDir in parentDirectories)
@@ -84,10 +85,6 @@ public class LoggingController : ControllerBase
                         // Merge tất cả file log theo biển số xe trong thư mục con
                         FileUtil.MergeFilesInFolder(subDir, outputFilePath, logRequest.VehiclePlate, _appSetting.AttrLog);
 
-                        //// Xác định platform (_Android hoặc _iOS)
-                        //string platformSuffix = parentDir.ToLower().Contains("_ios") ? "_iOS" :
-                        //                        parentDir.ToLower().Contains("_android") ? "_Android" : "";
-
                         var directoryName = Directory.CreateDirectory(parentDir).Name;
                         if (System.IO.File.Exists(outputFilePath))
                         {
@@ -99,15 +96,17 @@ public class LoggingController : ControllerBase
                     if (logRequest.TypeLog == TypeLog.CurrentApp)
                     {
                         // Định dạng tiền tố file log cần lấy
-                        string prefix = $"{logRequest.VehiclePlate}_";
+                        string prefix = $"{vehiclePlateLower}_";
 
                         // Lấy tất cả file trong thư mục con (subDir)
                         var logFiles = Directory.EnumerateFiles(subDir)
-                                                .Where(file => Path.GetFileName(file).StartsWith(prefix) &&
-                                                               file.Contains("_CurrentApp"))
-                                                 .OrderByDescending(file => System.IO.File.GetLastWriteTime(file)) // Sắp xếp theo thời gian chỉnh sửa gần nhất
-
-                                                .ToList();
+                                               .Where(file =>
+                                               {
+                                                   string fileNameLower = Path.GetFileName(file).ToLower();
+                                                   return fileNameLower.StartsWith(prefix) && fileNameLower.Contains("currentapp");
+                                               })
+                                               .OrderByDescending(file => System.IO.File.GetLastWriteTime(file))
+                                               .ToList();
                         // Lấy file mới nhất nếu có
                         if (logFiles.Any())
                         {
